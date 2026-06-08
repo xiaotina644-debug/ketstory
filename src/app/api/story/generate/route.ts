@@ -1,6 +1,8 @@
-import { NextResponse } from 'next/server';
 import { createAIService } from '@/lib/services/aiService';
 import { AIError, ErrorCode } from '@/lib/errors';
+
+// 使用 Edge Runtime 支持流式响应
+export const runtime = 'edge';
 
 export async function POST(request: Request) {
   const aiService = createAIService();
@@ -10,14 +12,14 @@ export async function POST(request: Request) {
     const { words, style } = body;
 
     if (!words || !Array.isArray(words) || words.length === 0) {
-      return NextResponse.json(
-        { error: '请至少选择一个单词' },
-        { status: 400 }
+      return new Response(
+        JSON.stringify({ error: '请至少选择一个单词' }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
       );
     }
 
-    // 使用流式响应
     const encoder = new TextEncoder();
+    
     const stream = new ReadableStream({
       async start(controller) {
         try {
@@ -36,7 +38,7 @@ export async function POST(request: Request) {
             content: storyResponse.content 
           })}\n\n`));
 
-          // 步骤2: 并行生成图片
+          // 步骤2: 并行生成图片（限制数量避免超时）
           controller.enqueue(encoder.encode(`data: ${JSON.stringify({ 
             type: 'progress', 
             step: 2, 
@@ -45,10 +47,11 @@ export async function POST(request: Request) {
           })}\n\n`));
 
           const sentences = storyResponse.content.split(/[.!?]+/).filter(s => s.trim().length > 5);
-          const prompts = sentences.map(s => s.trim());
+          // 限制图片数量避免超时
+          const prompts = sentences.slice(0, 6).map(s => s.trim());
           
-          // 并行生成图片，最多同时生成4张
-          const maxParallel = 4;
+          // 并行生成图片，最多同时生成2张（减少并发）
+          const maxParallel = 2;
           const imageUrls: string[] = [];
           
           for (let i = 0; i < prompts.length; i += maxParallel) {
@@ -64,7 +67,7 @@ export async function POST(request: Request) {
             })}\n\n`));
           }
 
-          // 步骤3: 生成音频（可选，如果超时可以跳过）
+          // 步骤3: 跳过音频生成（避免超时）
           controller.enqueue(encoder.encode(`data: ${JSON.stringify({ 
             type: 'progress', 
             step: 3, 
@@ -72,20 +75,12 @@ export async function POST(request: Request) {
             message: '正在生成音频...' 
           })}\n\n`));
 
-          let audioUrl = '';
-          try {
-            const audioResponse = await aiService.generateAudio({ text: storyResponse.content });
-            audioUrl = audioResponse.url;
-          } catch (audioError) {
-            console.warn('音频生成失败:', audioError);
-          }
-
-          // 完成
+          // 完成（音频可以后续按需生成）
           controller.enqueue(encoder.encode(`data: ${JSON.stringify({ 
             type: 'complete',
             content: storyResponse.content,
             images: imageUrls,
-            audioUrl,
+            audioUrl: '',
             words,
             style
           })}\n\n`));
@@ -94,7 +89,6 @@ export async function POST(request: Request) {
 
         } catch (error) {
           let errorMessage = '生成失败，请稍后再试';
-          let errorCode = 500;
 
           if (error instanceof AIError) {
             const errorMessages: Record<ErrorCode, string> = {
@@ -107,34 +101,30 @@ export async function POST(request: Request) {
               [ErrorCode.UNKNOWN]: '未知错误',
             };
             errorMessage = errorMessages[error.code] || '未知错误';
-            errorCode = error.code;
           }
 
           controller.enqueue(encoder.encode(`data: ${JSON.stringify({ 
             type: 'error', 
-            error: errorMessage, 
-            code: errorCode 
+            error: errorMessage 
           })}\n\n`));
           controller.close();
         }
       }
     });
 
-    return new NextResponse(stream, {
+    return new Response(stream, {
       headers: {
         'Content-Type': 'text/event-stream',
         'Cache-Control': 'no-cache',
         'Connection': 'keep-alive',
+        'Access-Control-Allow-Origin': '*',
       },
     });
 
   } catch (error) {
-    return NextResponse.json(
-      { error: '请求处理失败' },
-      { status: 500 }
+    return new Response(
+      JSON.stringify({ error: '请求处理失败' }),
+      { status: 500, headers: { 'Content-Type': 'application/json' } }
     );
   }
 }
-
-// 设置更长的超时时间
-export const maxDuration = 60;
