@@ -97,10 +97,10 @@ export default function WordInput({
 
   return (
     <div className="card">
-      <h2 className="text-lg font-semibold text-gray-800 mb-4">学习设置</h2>
+      <h2 className="text-lg font-semibold text-card-foreground mb-4">学习设置</h2>
       
       <div className="mb-4">
-        <p className="text-sm text-gray-500 mb-2">选择今日学习单词数量：</p>
+        <p className="text-sm text-muted-foreground mb-2">选择今日学习单词数量：</p>
         <div className="flex flex-wrap gap-2">
           {WORD_COUNTS.map((count) => (
             <button
@@ -108,8 +108,8 @@ export default function WordInput({
               onClick={() => setSelectedCount(count)}
               className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
                 selectedCount === count
-                  ? 'bg-primary-500 text-white shadow-md'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  ? 'bg-primary text-primary-foreground shadow-md'
+                  : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
               }`}
             >
               {count}个
@@ -123,12 +123,12 @@ export default function WordInput({
           {selectedWords.map((word) => (
             <span
               key={word}
-              className="inline-flex items-center gap-1 px-3 py-1.5 bg-primary-100 text-primary-700 rounded-full text-sm"
+              className="inline-flex items-center gap-1 px-3 py-1.5 bg-accent text-accent-foreground rounded-full text-sm"
             >
               {word}
               <button
                 onClick={() => handleRemoveWord(word)}
-                className="hover:text-primary-900 transition-colors"
+                className="hover:text-primary transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -159,11 +159,11 @@ export default function WordInput({
         </div>
         
         {showWordList && (
-          <div className="mt-2 bg-white border-2 border-gray-100 rounded-xl p-3 max-h-48 overflow-y-auto">
-            <p className="text-sm text-gray-500 mb-2">推荐单词：</p>
+          <div className="mt-2 bg-card border-2 border-border rounded-xl p-3 max-h-48 overflow-y-auto">
+            <p className="text-sm text-muted-foreground mb-2">推荐单词：</p>
             {isLoadingWords ? (
               <div className="flex justify-center items-center py-4">
-                <Loader2 className="w-5 h-5 text-primary-500 animate-spin" />
+                <Loader2 className="w-5 h-5 text-primary animate-spin" />
               </div>
             ) : (
               <div className="flex flex-wrap gap-2">
@@ -172,7 +172,7 @@ export default function WordInput({
                     key={word.word}
                     onClick={() => handleAddWord(word.word)}
                     disabled={selectedWords.length >= selectedCount}
-                    className="px-3 py-1.5 bg-gray-100 hover:bg-primary-100 disabled:bg-gray-50 text-gray-700 hover:text-primary-700 disabled:text-gray-400 rounded-full text-sm transition-colors"
+                    className="px-3 py-1.5 bg-secondary hover:bg-accent disabled:bg-secondary/50 text-secondary-foreground hover:text-accent-foreground disabled:text-muted-foreground rounded-full text-sm transition-colors"
                   >
                     {word.word}
                   </button>
@@ -184,7 +184,7 @@ export default function WordInput({
       </div>
 
       <div className="mb-4">
-        <p className="text-sm text-gray-500 mb-2">选择故事风格：</p>
+        <p className="text-sm text-muted-foreground mb-2">选择故事风格：</p>
         <div className="flex flex-wrap gap-2">
           {storyStyles.map((style) => (
             <button
@@ -192,8 +192,8 @@ export default function WordInput({
               onClick={() => onStyleChange(style.id)}
               className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
                 selectedStyle === style.id
-                  ? 'bg-primary-500 text-white shadow-md'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  ? 'bg-primary text-primary-foreground shadow-md'
+                  : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
               }`}
             >
               {style.name}

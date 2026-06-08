@@ -1,60 +1,128 @@
 import { Story, GenerationProgress } from '@/types';
 
-export async function generateStory(
-  words: string[],
-  style: string
-): Promise<string> {
-  const response = await fetch('/api/story/generate', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ words, style }),
-  });
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to generate story');
-  }
-
-  const data = await response.json();
-  return data.content;
-}
-
-export async function generateImages(
-  story: string
-): Promise<string[]> {
-  const response = await fetch('/api/story/generate', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ words: ['test'], style: 'daily' }),
-  });
-
-  if (!response.ok) {
-    const sentences = story.split(/[.!?]+/).filter(s => s.trim().length > 5);
-    const numImages = Math.min(sentences.length, 4);
-    const mockImages: string[] = [];
-    for (let i = 0; i < numImages; i++) {
-      mockImages.push(`https://neeko-copilot.bytedance.net/api/text2image?prompt=cute%20cartoon%20children%20story%20illustration%20colorful%20happy%20scene&image_size=landscape_16_9`);
-    }
-    return mockImages;
-  }
-
-  const data = await response.json();
-  return data.images || [];
-}
-
-export async function generateAudio(
-  story: string,
-  voice: 'british' | 'american' = 'british'
-): Promise<string> {
-  await new Promise(resolve => setTimeout(resolve, 2000 + Math.random() * 2000));
-  return 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3';
-}
-
 export async function generateStoryBook(
+  words: string[],
+  style: string,
+  onProgress: (progress: GenerationProgress) => void
+): Promise<Story> {
+  return new Promise((resolve, reject) => {
+    onProgress({ step: 'story', status: 'generating', message: '正在生成故事...' });
+
+    fetch('/api/story/generate', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ words, style }),
+    })
+    .then(async (response) => {
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: '请求失败' }));
+        onProgress({ step: 'story', status: 'error', message: errorData.error });
+        reject(new Error(errorData.error));
+        return;
+      }
+
+      const reader = response.body?.getReader();
+      if (!reader) {
+        reject(new Error('无法读取响应流'));
+        return;
+      }
+
+      const decoder = new TextDecoder('utf-8');
+      let buffer = '';
+
+      const read = async () => {
+        try {
+          const { done, value } = await reader.read();
+          
+          if (done) {
+            return;
+          }
+
+          buffer += decoder.decode(value, { stream: true });
+          
+          while (buffer.includes('\n\n')) {
+            const index = buffer.indexOf('\n\n');
+            const chunk = buffer.substring(0, index);
+            buffer = buffer.substring(index + 2);
+
+            if (chunk.startsWith('data: ')) {
+              try {
+                const data = JSON.parse(chunk.substring(6));
+                
+                switch (data.type) {
+                  case 'progress':
+                    const stepMap: Record<number, 'story' | 'images' | 'audio'> = {
+                      1: 'story',
+                      2: 'images',
+                      3: 'audio',
+                    };
+                    onProgress({
+                      step: stepMap[data.step],
+                      status: 'generating',
+                      message: data.message,
+                    });
+                    break;
+
+                  case 'story':
+                    onProgress({ step: 'story', status: 'completed', message: '故事生成完成！' });
+                    break;
+
+                  case 'images':
+                    const progress = data.progress || 100;
+                    onProgress({
+                      step: 'images',
+                      status: progress >= 100 ? 'completed' : 'generating',
+                      message: progress >= 100 ? '插图生成完成！' : `正在生成插图... ${progress}%`,
+                    });
+                    break;
+
+                  case 'complete':
+                    reader.cancel();
+                    onProgress({ step: 'audio', status: 'completed', message: '语音合成完成！' });
+                    resolve({
+                      id: `story-${Date.now()}`,
+                      words,
+                      content: data.content,
+                      images: data.images,
+                      audioUrl: data.audioUrl,
+                      style,
+                      createdAt: new Date(),
+                    });
+                    return;
+
+                  case 'error':
+                    reader.cancel();
+                    onProgress({ step: 'story', status: 'error', message: data.error });
+                    reject(new Error(data.error));
+                    return;
+                }
+              } catch (parseError) {
+                console.warn('Error parsing SSE message:', parseError);
+              }
+            }
+          }
+
+          await read();
+        } catch (error) {
+          reader.cancel();
+          onProgress({ step: 'story', status: 'error', message: '连接中断，请重试' });
+          reject(error);
+        }
+      };
+
+      await read();
+    })
+    .catch((error) => {
+      onProgress({ step: 'story', status: 'error', message: '请求失败，请重试' });
+      reject(error);
+    });
+  });
+}
+
+// 备用函数：使用传统方式（非流式）
+export async function generateStoryBookFallback(
   words: string[],
   style: string,
   onProgress: (progress: GenerationProgress) => void
@@ -97,7 +165,16 @@ export async function generateStoryBook(
   };
 }
 
-function generateMockStory(words: string[], style: string): string {
+export async function generateAudio(
+  story: string,
+  voice: 'british' | 'american' = 'british'
+): Promise<string> {
+  await new Promise(resolve => setTimeout(resolve, 2000 + Math.random() * 2000));
+  return 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3';
+}
+
+// 生成mock故事用于测试
+export function generateMockStory(words: string[], style: string): string {
   const [w1, w2, w3, w4, w5] = words;
   const word1 = w1 || 'dog';
   const word2 = w2 || 'park';
@@ -166,7 +243,7 @@ function generateMockStory(words: string[], style: string): string {
   return styleTemplates[style]?.() || styleTemplates.daily();
 }
 
-function generateMockImages(story: string): string[] {
+export function generateMockImages(story: string): string[] {
   const sentences = story.split(/[\n.!?]+/).filter(s => s.trim().length > 3);
   const numImages = Math.min(sentences.length, 4);
   
