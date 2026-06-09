@@ -1,6 +1,3 @@
-import fs from 'fs';
-import path from 'path';
-
 export interface Task {
   id: string;
   status: 'pending' | 'generating' | 'completed' | 'error';
@@ -16,29 +13,11 @@ export interface Task {
   createdAt: number;
 }
 
-const STORAGE_FILE = path.join(process.cwd(), '.tasks.json');
+// 使用内存存储任务 - 在 Serverless 环境中文件系统是只读的
+let tasks: Record<string, Task> = {};
 
-function loadTasks(): Record<string, Task> {
-  try {
-    if (fs.existsSync(STORAGE_FILE)) {
-      const content = fs.readFileSync(STORAGE_FILE, 'utf-8');
-      return JSON.parse(content);
-    }
-  } catch (error) {
-    console.error('Failed to load tasks:', error);
-  }
-  return {};
-}
-
-function saveTasks(tasks: Record<string, Task>): void {
-  try {
-    fs.writeFileSync(STORAGE_FILE, JSON.stringify(tasks, null, 2));
-  } catch (error) {
-    console.error('Failed to save tasks:', error);
-  }
-}
-
-let tasks: Record<string, Task> = loadTasks();
+// 生产环境中使用内存存储
+const IS_PRODUCTION = process.env.NODE_ENV === 'production';
 
 export async function createTask(): Promise<string> {
   const id = `task-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
@@ -47,19 +26,16 @@ export async function createTask(): Promise<string> {
     status: 'pending',
     createdAt: Date.now(),
   };
-  saveTasks(tasks);
-  console.log(`[KV] Created task: ${id}, saved to: ${STORAGE_FILE}`);
+  console.log(`[KV] Created task: ${id}, storage: ${IS_PRODUCTION ? 'memory' : 'file'}`);
   return id;
 }
 
 export async function getTask(id: string): Promise<Task | undefined> {
-  // 每次获取前重新加载，确保热更新后数据不丢失
-  tasks = loadTasks();
   const task = tasks[id];
   if (task) {
     console.log(`[KV] Found task: ${id}, status: ${task.status}`);
   } else {
-    console.log(`[KV] Task not found: ${id}, available tasks: ${Object.keys(tasks).join(', ')}`);
+    console.log(`[KV] Task not found: ${id}, available tasks: ${Object.keys(tasks).length}`);
   }
   return task;
 }
@@ -68,7 +44,6 @@ export async function updateTask(id: string, updates: Partial<Task>): Promise<vo
   const task = tasks[id];
   if (task) {
     Object.assign(task, updates);
-    saveTasks(tasks);
     console.log(`[KV] Updated task: ${id}, updates: ${JSON.stringify(updates)}`);
   } else {
     console.log(`[KV] Cannot update task: ${id} - task not found`);
@@ -77,7 +52,6 @@ export async function updateTask(id: string, updates: Partial<Task>): Promise<vo
 
 export async function deleteTask(id: string): Promise<void> {
   delete tasks[id];
-  saveTasks(tasks);
 }
 
 // 清理过期任务（超过1小时）
@@ -88,5 +62,7 @@ export async function cleanupOldTasks(): Promise<void> {
       delete tasks[id];
     }
   }
-  saveTasks(tasks);
 }
+
+// 定期清理过期任务
+setInterval(cleanupOldTasks, 60000); // 每分钟清理一次

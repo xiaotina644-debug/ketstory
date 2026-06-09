@@ -192,9 +192,25 @@ exports.Prisma.LearningSettingsScalarFieldEnum = {
   updatedAt: 'updatedAt'
 };
 
+exports.Prisma.TaskScalarFieldEnum = {
+  id: 'id',
+  taskId: 'taskId',
+  status: 'status',
+  data: 'data',
+  error: 'error',
+  progress: 'progress',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
 exports.Prisma.SortOrder = {
   asc: 'asc',
   desc: 'desc'
+};
+
+exports.Prisma.NullableJsonNullValueInput = {
+  DbNull: Prisma.DbNull,
+  JsonNull: Prisma.JsonNull
 };
 
 exports.Prisma.QueryMode = {
@@ -207,6 +223,12 @@ exports.Prisma.NullsOrder = {
   last: 'last'
 };
 
+exports.Prisma.JsonNullValueFilter = {
+  DbNull: Prisma.DbNull,
+  JsonNull: Prisma.JsonNull,
+  AnyNull: Prisma.AnyNull
+};
+
 
 exports.Prisma.ModelName = {
   User: 'User',
@@ -214,7 +236,8 @@ exports.Prisma.ModelName = {
   Story: 'Story',
   UserLearning: 'UserLearning',
   DailyRecord: 'DailyRecord',
-  LearningSettings: 'LearningSettings'
+  LearningSettings: 'LearningSettings',
+  Task: 'Task'
 };
 
 /**
