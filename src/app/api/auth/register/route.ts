@@ -1,5 +1,6 @@
 import { register, SafeUser } from '@/lib/services/authService';
 import { cookies } from 'next/headers';
+import { sendWelcomeEmail } from '@/lib/email';
 
 export async function POST(request: Request) {
   try {
@@ -49,6 +50,14 @@ export async function POST(request: Request) {
         sameSite: 'strict',
         maxAge: 60 * 60 * 24 * 7, // 7天
       });
+
+      // 注册成功后，发送欢迎邮件（失败不影响注册）
+      try {
+        await sendWelcomeEmail(result.user.email, result.user.username);
+      } catch (error) {
+        console.error('欢迎邮件发送失败:', error);
+        // 不 throw，不影响注册流程
+      }
 
       // 返回安全的用户信息（不包含密码）
       const safeUser: SafeUser = {
