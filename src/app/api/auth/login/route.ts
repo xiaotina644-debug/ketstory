@@ -4,11 +4,40 @@ import { cookies } from 'next/headers';
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { username, password } = body;
+    const { username, password, turnstileToken } = body;
 
     if (!username || !password) {
       return new Response(
         JSON.stringify({ success: false, message: '用户名和密码不能为空' }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // 验证 Turnstile
+    if (!turnstileToken) {
+      return new Response(
+        JSON.stringify({ success: false, message: '请完成人机验证' }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // 验证 Turnstile token
+    const turnstileResponse = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        secret: process.env.TURNSTILE_SECRET_KEY,
+        response: turnstileToken,
+      }),
+    });
+
+    const turnstileData = await turnstileResponse.json();
+
+    if (!turnstileData.success) {
+      return new Response(
+        JSON.stringify({ success: false, message: '人机验证失败，请重试' }),
         { status: 400, headers: { 'Content-Type': 'application/json' } }
       );
     }

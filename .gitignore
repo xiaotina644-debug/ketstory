@@ -39,3 +39,6 @@ Thumbs.db
 
 # TypeScript cache
 *.tsbuildinfo
+
+# Task storage
+.tasks.json

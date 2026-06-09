@@ -3,8 +3,9 @@ import { cookies } from 'next/headers';
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
-    const { username, password, email } = body;
+    // 从请求体中拿到前端传来的 Turnstile token
+    const { turnstileToken, ...registrationData } = await request.json();
+    const { username, password, email } = registrationData;
 
     if (!username || !password) {
       return new Response(
@@ -13,6 +14,30 @@ export async function POST(request: Request) {
       );
     }
 
+    // 去 Cloudflare 验证这个 token 是不是真的
+    const verifyResponse = await fetch(
+      'https://challenges.cloudflare.com/turnstile/v0/siteverify',
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          secret: process.env.TURNSTILE_SECRET_KEY,
+          response: turnstileToken,
+        }),
+      }
+    );
+
+    const verifyResult = await verifyResponse.json();
+
+    // 如果验证失败，直接拒绝
+    if (!verifyResult.success) {
+      return Response.json(
+        { success: false, error: '人机验证失败，请重试' },
+        { status: 403 }
+      );
+    }
+
+    // 验证通过，继续正常的注册流程...
     const result = await register({ username, password, email });
 
     if (result.success && result.user) {

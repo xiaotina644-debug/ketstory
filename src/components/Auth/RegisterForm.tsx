@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { Turnstile } from '@marsidev/react-turnstile';
 
 export function RegisterForm() {
   const router = useRouter();
@@ -13,6 +14,7 @@ export function RegisterForm() {
   });
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,12 +41,18 @@ export function RegisterForm() {
       return;
     }
 
+    if (!turnstileToken) {
+      setError('请完成人机验证');
+      return;
+    }
+
     setIsLoading(true);
 
     try {
-      const requestBody: { username: string; password: string; email?: string } = {
+      const requestBody: { username: string; password: string; email?: string; turnstileToken: string } = {
         username: formData.username.trim(),
         password: formData.password,
+        turnstileToken,
       };
       if (formData.email.trim()) {
         requestBody.email = formData.email.trim();
@@ -153,6 +161,13 @@ export function RegisterForm() {
               placeholder="请再次输入密码"
             />
           </div>
+
+          <Turnstile
+            siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY!}
+            onSuccess={(token) => {
+              setTurnstileToken(token);
+            }}
+          />
 
           <button
             type="submit"
