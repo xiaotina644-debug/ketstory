@@ -1,10 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { BookOpen, User, Sun, Moon } from 'lucide-react';
+import { BookOpen, User, Sun, Moon, LogOut } from 'lucide-react';
+import { useAuth } from '@/lib/hooks/useAuth';
 
 export default function Header() {
   const [isDark, setIsDark] = useState(false);
+  const { user, isAuthenticated, logout } = useAuth();
 
   useEffect(() => {
     if (isDark) {
@@ -16,6 +18,10 @@ export default function Header() {
 
   const toggleDarkMode = () => {
     setIsDark(!isDark);
+  };
+
+  const handleLogout = async () => {
+    await logout();
   };
 
   return (
@@ -41,9 +47,34 @@ export default function Header() {
               <Moon className="w-5 h-5 text-foreground" />
             )}
           </button>
-          <button className="w-10 h-10 bg-secondary hover:bg-secondary/80 rounded-full flex items-center justify-center transition-colors">
-            <User className="w-5 h-5 text-foreground" />
-          </button>
+
+          {isAuthenticated && user ? (
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-foreground">{user.username}</span>
+              <button
+                onClick={handleLogout}
+                className="w-10 h-10 bg-secondary hover:bg-secondary/80 rounded-full flex items-center justify-center transition-colors"
+                title="登出"
+              >
+                <LogOut className="w-5 h-5 text-foreground" />
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <a
+                href="/login"
+                className="px-3 py-1.5 text-sm font-medium text-foreground hover:text-primary transition-colors"
+              >
+                登录
+              </a>
+              <a
+                href="/register"
+                className="px-3 py-1.5 text-sm font-medium bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+              >
+                注册
+              </a>
+            </div>
+          )}
         </div>
       </div>
     </header>
