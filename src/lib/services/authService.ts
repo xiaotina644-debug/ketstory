@@ -32,11 +32,14 @@ const SALT_ROUNDS = 10;
 
 export async function register(input: RegisterInput): Promise<AuthResult> {
   try {
+    console.log('注册请求:', { username: input.username, hasEmail: !!input.email });
+    
     const existingUser = await prisma.user.findUnique({
       where: { username: input.username },
     });
 
     if (existingUser) {
+      console.log('用户名已存在:', input.username);
       return { success: false, message: '用户名已存在' };
     }
 
@@ -45,11 +48,13 @@ export async function register(input: RegisterInput): Promise<AuthResult> {
         where: { email: input.email },
       });
       if (existingEmail) {
+        console.log('邮箱已被注册:', input.email);
         return { success: false, message: '邮箱已被注册' };
       }
     }
 
     const hashedPassword = await bcrypt.hash(input.password, SALT_ROUNDS);
+    console.log('密码加密完成');
 
     const user = await prisma.user.create({
       data: {
@@ -59,6 +64,7 @@ export async function register(input: RegisterInput): Promise<AuthResult> {
       },
     });
 
+    console.log('用户创建成功:', user.id);
     return { success: true, message: '注册成功', user };
   } catch (error) {
     console.error('注册失败:', error);
