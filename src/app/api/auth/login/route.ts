@@ -26,9 +26,17 @@ export async function POST(request: Request) {
       });
     }
 
+    if (result.success && result.user) {
+      // 移除密码字段
+      const { password, ...safeUser } = result.user;
+      return new Response(
+        JSON.stringify({ ...result, user: safeUser }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
     return new Response(
       JSON.stringify(result),
-      { status: result.success ? 200 : 400, headers: { 'Content-Type': 'application/json' } }
+      { status: 400, headers: { 'Content-Type': 'application/json' } }
     );
   } catch (error) {
     return new Response(

@@ -42,15 +42,27 @@ export function RegisterForm() {
     setIsLoading(true);
 
     try {
+      const requestBody: { username: string; password: string; email?: string } = {
+        username: formData.username.trim(),
+        password: formData.password,
+      };
+      if (formData.email.trim()) {
+        requestBody.email = formData.email.trim();
+      }
+
       const response = await fetch('/api/auth/register', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          username: formData.username,
-          password: formData.password,
-          email: formData.email || undefined,
-        }),
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify(requestBody),
       });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
 
       const data = await response.json();
 
@@ -60,6 +72,7 @@ export function RegisterForm() {
         setError(data.message);
       }
     } catch (error) {
+      console.error('注册请求失败:', error);
       setError('注册失败，请稍后重试');
     } finally {
       setIsLoading(false);
