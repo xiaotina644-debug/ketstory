@@ -176,8 +176,6 @@ export function RegisterForm() {
               setTurnstileToken('');
               setError('验证已过期，请重新验证');
             }}
-            retry="auto"
-            refreshOnExpire
           />
 
           <button

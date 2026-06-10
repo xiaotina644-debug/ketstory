@@ -35,7 +35,12 @@ export async function POST(request: Request) {
     // 去 Cloudflare 验证这个 token 是不是真的
     let verifyResponse;
     try {
-      verifyResponse = await fetch(
+      // 使用 Promise.race 实现超时控制
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error('请求超时')), 10000);
+      });
+      
+      const fetchPromise = fetch(
         'https://challenges.cloudflare.com/turnstile/v0/siteverify',
         {
           method: 'POST',
@@ -44,9 +49,10 @@ export async function POST(request: Request) {
             secret: process.env.TURNSTILE_SECRET_KEY,
             response: turnstileToken,
           }),
-          timeout: 10000, // 10秒超时
         }
       );
+      
+      verifyResponse = await Promise.race([fetchPromise, timeoutPromise]);
     } catch (fetchError) {
       console.error('Turnstile 验证请求失败:', fetchError);
       return Response.json(
