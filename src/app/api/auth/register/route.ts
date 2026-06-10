@@ -4,11 +4,17 @@ import { sendWelcomeEmail } from '@/lib/email';
 
 export async function POST(request: Request) {
   try {
-    // 从请求体中拿到前端传来的 Turnstile token
-    const { turnstileToken, ...registrationData } = await request.json();
+    // 记录请求信息
+    const requestBody = await request.json();
+    console.log('注册请求体:', JSON.stringify(requestBody, null, 2));
+    
+    const { turnstileToken, ...registrationData } = requestBody;
     const { username, password, email } = registrationData;
 
+    console.log('注册参数:', { username: !!username, password: !!password, email: !!email, turnstileToken: !!turnstileToken });
+
     if (!username || !password) {
+      console.log('错误: 用户名或密码为空');
       return new Response(
         JSON.stringify({ success: false, message: '用户名和密码不能为空' }),
         { status: 400, headers: { 'Content-Type': 'application/json' } }
