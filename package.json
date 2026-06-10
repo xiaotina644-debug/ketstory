@@ -3,11 +3,11 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "next dev -p 3000",
-    "build": "prisma generate && next build",
-    "start": "next start",
-    "lint": "next lint",
-    "postinstall": "prisma generate"
+    "dev": "./node_modules/.bin/next dev -p 3000",
+    "build": "./node_modules/.bin/prisma generate && ./node_modules/.bin/next build --webpack",
+    "start": "./node_modules/.bin/next start",
+    "lint": "./node_modules/.bin/next lint",
+    "postinstall": "./node_modules/.bin/prisma generate"
   },
   "dependencies": {
     "@marsidev/react-turnstile": "^1.5.2",
@@ -19,7 +19,6 @@
     "lucide-react": "^0.323.0",
     "next": "^16.2.9",
     "pg": "^8.21.0",
-    "prisma": "^6.19.3",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-email": "^6.6.0",
@@ -34,6 +33,7 @@
     "@types/react-dom": "^18.2.18",
     "autoprefixer": "^10.4.17",
     "postcss": "^8.4.33",
+    "prisma": "^7.8.0",
     "tailwindcss": "^3.4.14",
     "typescript": "^5.3.3"
   }
