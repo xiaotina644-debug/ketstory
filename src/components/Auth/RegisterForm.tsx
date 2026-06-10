@@ -68,16 +68,13 @@ export function RegisterForm() {
         body: JSON.stringify(requestBody),
       });
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
       const data = await response.json();
 
       if (data.success) {
         router.push('/');
       } else {
-        setError(data.message);
+        // 显示后端返回的错误消息
+        setError(data.message || data.error || '注册失败，请稍后重试');
       }
     } catch (error) {
       console.error('注册请求失败:', error);
