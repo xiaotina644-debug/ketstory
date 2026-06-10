@@ -166,7 +166,18 @@ export function RegisterForm() {
             siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY!}
             onSuccess={(token) => {
               setTurnstileToken(token);
+              setError('');
             }}
+            onError={(error) => {
+              console.error('Turnstile error:', error);
+              setError('人机验证失败，请刷新页面重试');
+            }}
+            onExpire={() => {
+              setTurnstileToken('');
+              setError('验证已过期，请重新验证');
+            }}
+            retry="auto"
+            refreshOnExpire
           />
 
           <button

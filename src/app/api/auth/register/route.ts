@@ -15,25 +15,66 @@ export async function POST(request: Request) {
       );
     }
 
+    // 检查 Turnstile 配置
+    if (!process.env.TURNSTILE_SECRET_KEY) {
+      console.error('TURNSTILE_SECRET_KEY 环境变量未配置');
+      return Response.json(
+        { success: false, error: '服务器配置错误' },
+        { status: 500 }
+      );
+    }
+
+    // 检查 token 是否存在
+    if (!turnstileToken) {
+      return Response.json(
+        { success: false, error: '请先完成人机验证' },
+        { status: 400 }
+      );
+    }
+
     // 去 Cloudflare 验证这个 token 是不是真的
-    const verifyResponse = await fetch(
-      'https://challenges.cloudflare.com/turnstile/v0/siteverify',
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          secret: process.env.TURNSTILE_SECRET_KEY,
-          response: turnstileToken,
-        }),
-      }
-    );
+    let verifyResponse;
+    try {
+      verifyResponse = await fetch(
+        'https://challenges.cloudflare.com/turnstile/v0/siteverify',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            secret: process.env.TURNSTILE_SECRET_KEY,
+            response: turnstileToken,
+          }),
+          timeout: 10000, // 10秒超时
+        }
+      );
+    } catch (fetchError) {
+      console.error('Turnstile 验证请求失败:', fetchError);
+      return Response.json(
+        { success: false, error: '验证服务暂时不可用，请稍后重试' },
+        { status: 503 }
+      );
+    }
 
     const verifyResult = await verifyResponse.json();
+    console.log('Turnstile 验证结果:', verifyResult);
 
-    // 如果验证失败，直接拒绝
+    // 如果验证失败，返回详细错误信息
     if (!verifyResult.success) {
+      const errorCodes = verifyResult['error-codes'] || [];
+      console.error('Turnstile 验证失败:', errorCodes);
+      
+      let errorMessage = '人机验证失败，请重试';
+      if (errorCodes.includes('timeout')) {
+        errorMessage = '验证超时，请刷新页面重试';
+      } else if (errorCodes.includes('invalid-input-response')) {
+        errorMessage = '验证响应无效，请重新验证';
+      } else if (errorCodes.includes('invalid-secret')) {
+        errorMessage = '服务器配置错误';
+        console.error('TURNSTILE_SECRET_KEY 可能不正确');
+      }
+      
       return Response.json(
-        { success: false, error: '人机验证失败，请重试' },
+        { success: false, error: errorMessage },
         { status: 403 }
       );
     }
