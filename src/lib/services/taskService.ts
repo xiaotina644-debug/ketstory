@@ -1,6 +1,8 @@
 import { createAIService } from './aiService';
 import prisma from '../db';
 import { Task } from '../kv';
+import { uploadToR2 } from '../r2';
+import { nanoid } from 'nanoid';
 
 // 在生产环境中使用数据库存储任务，开发环境使用内存存储
 const USE_DATABASE = process.env.NODE_ENV === 'production';
@@ -127,8 +129,29 @@ async function executeStoryTask(taskId: string, words: string[], style: string) 
     
     const imageUrls: string[] = [];
     for (let i = 0; i < prompts.length; i++) {
+      // 调用 AI 接口生成图片，拿到临时链接
       const result = await aiService.generateImage({ prompt: prompts[i] });
-      imageUrls.push(result.url);
+      const tempImageUrl = result.url;
+      
+      try {
+        // 下载这张图片
+        const imageResponse = await fetch(tempImageUrl);
+        const imageBuffer = Buffer.from(await imageResponse.arrayBuffer());
+        
+        // 生成一个唯一的文件名
+        const fileName = `images/${nanoid()}.png`;
+        
+        // 上传到 R2，拿到永久链接
+        const permanentUrl = await uploadToR2(imageBuffer, fileName, 'image/png');
+        imageUrls.push(permanentUrl);
+        
+        console.log(`[TaskService] Uploaded image ${i + 1}/${prompts.length} to R2: ${permanentUrl}`);
+      } catch (uploadError) {
+        // 如果上传失败，使用临时链接作为备用
+        console.warn(`[TaskService] Failed to upload image ${i + 1} to R2, using temporary URL: ${uploadError}`);
+        imageUrls.push(tempImageUrl);
+      }
+      
       await updateStoryTask(taskId, { progress: 30 + Math.round((i + 1) / prompts.length * 50) });
     }
     
