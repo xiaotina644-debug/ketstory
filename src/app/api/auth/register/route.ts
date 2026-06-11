@@ -91,8 +91,11 @@ export async function POST(request: Request) {
       );
     }
 
+    console.log('Turnstile 验证通过，开始注册流程');
+
     // 验证通过，继续正常的注册流程...
     const result = await register({ username, password, email });
+    console.log('注册服务返回结果:', result);
 
     if (result.success && result.user) {
       // 设置登录状态
