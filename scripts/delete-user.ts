@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import prisma from '../src/lib/db';
 
 async function deleteUserByEmail(email: string) {
@@ -27,5 +28,14 @@ async function deleteUserByEmail(email: string) {
   }
 }
 
-// 删除指定邮箱的用户
-deleteUserByEmail('903531808@qq.com');
+// 获取命令行参数中的邮箱
+const args = process.argv.slice(2);
+const emailArg = args.find(arg => arg.startsWith('--email='));
+
+if (emailArg) {
+  const email = emailArg.split('=')[1];
+  deleteUserByEmail(email);
+} else {
+  console.log('请使用 --email=xxx 参数指定要删除的邮箱');
+  process.exit(1);
+}
