@@ -129,6 +129,7 @@ export default function WordInput({
               <button
                 onClick={() => handleRemoveWord(word)}
                 className="hover:text-primary transition-colors"
+                aria-label={`移除单词 ${word}`}
               >
                 <X className="w-4 h-4" />
               </button>
@@ -153,6 +154,7 @@ export default function WordInput({
             onClick={handleManualInput}
             disabled={isGenerating || !inputValue.trim() || selectedWords.length >= selectedCount}
             className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 bg-primary-500 hover:bg-primary-600 disabled:bg-gray-300 rounded-full flex items-center justify-center transition-colors"
+            aria-label="添加单词"
           >
             <Plus className="w-4 h-4 text-white" />
           </button>
@@ -173,6 +175,7 @@ export default function WordInput({
                     onClick={() => handleAddWord(word.word)}
                     disabled={selectedWords.length >= selectedCount}
                     className="px-3 py-1.5 bg-secondary hover:bg-accent disabled:bg-secondary/50 text-secondary-foreground hover:text-accent-foreground disabled:text-muted-foreground rounded-full text-sm transition-colors"
+                    aria-label={`添加单词 ${word.word}`}
                   >
                     {word.word}
                   </button>
