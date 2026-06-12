@@ -40,6 +40,7 @@ export default function Header() {
           <button
             onClick={toggleDarkMode}
             className="w-10 h-10 bg-secondary hover:bg-secondary/80 rounded-full flex items-center justify-center transition-colors"
+            aria-label={isDark ? '切换到亮色模式' : '切换到暗色模式'}
           >
             {isDark ? (
               <Sun className="w-5 h-5 text-foreground" />
@@ -54,6 +55,7 @@ export default function Header() {
               <button
                 onClick={handleLogout}
                 className="w-10 h-10 bg-secondary hover:bg-secondary/80 rounded-full flex items-center justify-center transition-colors"
+                aria-label="登出账户"
                 title="登出"
               >
                 <LogOut className="w-5 h-5 text-foreground" />

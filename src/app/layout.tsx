@@ -17,8 +17,41 @@ export default function RootLayout({
 }) {
   return (
     <html lang="zh-CN">
+      <head>
+        {/* 结构化数据 - Schema.org */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "WebApplication",
+              "name": "KET绘本",
+              "description": "面向8-12岁儿童的英语词汇学习平台，通过AI生成绘本故事帮助孩子轻松掌握KET核心词汇",
+              "url": "https://ket.aiyouran.top",
+              "applicationCategory": "EducationApplication",
+              "targetAudience": {
+                "@type": "Audience",
+                "audienceType": "Children",
+                "audienceMaxAge": 12,
+                "audienceMinAge": 8
+              }
+            })
+          }}
+        />
+      </head>
       <body className={inter.className}>
-        {children}
+        <div className="min-h-screen flex flex-col">
+          {/* 语义化标签 */}
+          <header className="w-full">
+            {/* 头部内容由子组件渲染 */}
+          </header>
+          <main className="flex-1">
+            {children}
+          </main>
+          <footer className="w-full">
+            {/* 底部内容由子组件渲染 */}
+          </footer>
+        </div>
         <TawkToChat />
       </body>
     </html>

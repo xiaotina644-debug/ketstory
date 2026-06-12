@@ -73,7 +73,7 @@ export default function StoryViewer({ story, onClose }: StoryViewerProps) {
       return `
 <div style="margin-bottom: 30px; text-align: center;">
 <p style="font-size: 22px; line-height: 1.8; text-align: left; margin-bottom: 15px;">${highlightedSentence}.</p>
-<img src="${imageUrl}" alt="插图" style="max-width: 65%; height: auto; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);" />
+<img src="${imageUrl}" alt="故事场景插图 - 描绘句子内容" style="max-width: 65%; height: auto; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);" />
 </div>
 `;
     }).join('');
@@ -131,7 +131,7 @@ ${wordCardsHtml}
       return `
 <div style="margin-bottom: 30px; text-align: center;">
 <p style="font-size: 22px; line-height: 1.8; text-align: left; margin-bottom: 15px;">${highlightedSentence}.</p>
-<img src="${imageUrl}" alt="插图" style="max-width: 65%; height: auto; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);" />
+<img src="${imageUrl}" alt="故事场景插图 - 描绘句子内容" style="max-width: 65%; height: auto; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);" />
 </div>
 `;
     }).join('');

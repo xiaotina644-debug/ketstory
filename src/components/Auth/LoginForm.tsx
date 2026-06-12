@@ -119,6 +119,7 @@ export function LoginForm() {
             type="submit"
             disabled={isLoading}
             className="w-full py-3 bg-primary text-primary-foreground font-semibold rounded-lg hover:bg-primary/90 focus:ring-2 focus:ring-primary focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            aria-label={isLoading ? '登录中，请等待' : '提交登录'}
           >
             {isLoading ? '登录中...' : '登录'}
           </button>
